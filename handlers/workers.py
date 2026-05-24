@@ -8,9 +8,8 @@ from config import WORKERS
 router = Router()
 
 
-@router.message(F.text.in_(["👷 Мои рабочие", "👷 My Workers"]))
-async def show_workers(message: Message, lang: str):
-    user_id = message.from_user.id
+async def show_workers_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+    """Показывает рабочих"""
     user = await get_user(user_id)
     workers = await get_user_workers(user_id)
     income = await calculate_income(user_id)
@@ -47,22 +46,31 @@ async def show_workers(message: Message, lang: str):
             if lang == "ru"
             else "😔 You have no workers.\nGo to the shop!"
         )
-        await message.answer(header + no_workers, parse_mode="HTML")
-        return
+        text = header + no_workers
+    else:
+        lines = []
+        for w in workers:
+            wtype = w["worker_type"]
+            cnt = w["cnt"]
+            name = get_worker_name(wtype, lang)
+            day_income = WORKERS[wtype]["income_day"] * cnt
+            lines.append(f"  {name} ×{cnt}\n  └ {day_income:.4f} TON/day")
+        text = header + "\n".join(lines)
 
-    lines = []
-    for w in workers:
-        wtype = w["worker_type"]
-        cnt = w["cnt"]
-        name = get_worker_name(wtype, lang)
-        day_income = WORKERS[wtype]["income_day"] * cnt
-        lines.append(f"  {name} ×{cnt}\n  └ {day_income:.4f} TON/day")
+    if edit and hasattr(callback_or_message, 'message'):
+        await callback_or_message.message.edit_text(text, reply_markup=workers_keyboard(lang), parse_mode="HTML")
+    else:
+        await callback_or_message.answer(text, reply_markup=workers_keyboard(lang), parse_mode="HTML")
 
-    await message.answer(
-        header + "\n".join(lines),
-        reply_markup=workers_keyboard(lang),
-        parse_mode="HTML"
-    )
+
+@router.message(F.text.in_(["👷 Мои рабочие", "👷 My Workers"]))
+async def show_workers(message: Message, lang: str):
+    await show_workers_content(message, message.from_user.id, lang, edit=False)
+
+
+async def show_workers_callback(callback: CallbackQuery, lang: str):
+    await show_workers_content(callback, callback.from_user.id, lang, edit=True)
+    await callback.answer()
 
 
 @router.callback_query(F.data == "collect_income")
