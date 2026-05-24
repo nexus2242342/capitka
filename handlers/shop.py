@@ -9,11 +9,11 @@ from config import WORKERS, ACHIEVEMENTS
 router = Router()
 
 
-@router.message(F.text.in_(["🏪 Магазин", "🏪 Shop"]))
-async def show_shop(message: Message, lang: str):
-    user = await get_user(message.from_user.id)
-    income = await calculate_income(message.from_user.id)
-
+async def show_shop_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+    """Показывает магазин"""
+    user = await get_user(user_id)
+    income = await calculate_income(user_id)
+    
     text = (
         "╔══════════════════════╗\n"
         f"║    {'🏪 МАГАЗИН' if lang == 'ru' else '🏪 SHOP'}         ║\n"
@@ -22,24 +22,26 @@ async def show_shop(message: Message, lang: str):
         f"📈 {t('income_day', lang)}: <b>{format_ton(income)} TON</b>\n\n"
         f"{'👇 Выберите рабочего:' if lang == 'ru' else '👇 Choose a worker:'}"
     )
-    await message.answer(text, reply_markup=shop_keyboard(lang), parse_mode="HTML")
+    
+    if edit and hasattr(callback_or_message, 'message'):
+        await callback_or_message.message.edit_text(text, reply_markup=shop_keyboard(lang), parse_mode="HTML")
+    else:
+        await callback_or_message.answer(text, reply_markup=shop_keyboard(lang), parse_mode="HTML")
+
+
+@router.message(F.text.in_(["🏪 Магазин", "🏪 Shop"]))
+async def show_shop(message: Message, lang: str):
+    await show_shop_content(message, message.from_user.id, lang, edit=False)
+
+
+async def show_shop_callback(callback: CallbackQuery, lang: str):
+    await show_shop_content(callback, callback.from_user.id, lang, edit=True)
+    await callback.answer()
 
 
 @router.callback_query(F.data == "back_shop")
 async def back_shop(callback: CallbackQuery, lang: str):
-    user = await get_user(callback.from_user.id)
-    income = await calculate_income(callback.from_user.id)
-
-    text = (
-        "╔══════════════════════╗\n"
-        f"║    {'🏪 МАГАЗИН' if lang == 'ru' else '🏪 SHOP'}         ║\n"
-        "╚══════════════════════╝\n\n"
-        f"💰 {t('balance', lang)}: <b>{format_ton(user['balance'])} TON</b>\n"
-        f"📈 {t('income_day', lang)}: <b>{format_ton(income)} TON</b>\n\n"
-        f"{'👇 Выберите рабочего:' if lang == 'ru' else '👇 Choose a worker:'}"
-    )
-    await callback.message.edit_text(text, reply_markup=shop_keyboard(lang), parse_mode="HTML")
-    await callback.answer()
+    await show_shop_content(callback, callback.from_user.id, lang, edit=True)
 
 
 @router.callback_query(F.data.startswith("buy_worker_"))
