@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from database.db import get_user, get_referrals
 from utils.helpers import format_ton
 from config import REFERRAL_PERCENTS
@@ -7,13 +7,12 @@ from config import REFERRAL_PERCENTS
 router = Router()
 
 
-@router.message(F.text.in_(["👥 Рефералы", "👥 Referrals"]))
-async def show_referral(message: Message, lang: str):
-    user_id = message.from_user.id
+async def show_referral_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+    """Показывает реферальную программу"""
     user = await get_user(user_id)
     ref_count = await get_referrals(user_id)
 
-    bot_info = await message.bot.get_me()
+    bot_info = await (callback_or_message.bot if hasattr(callback_or_message, 'bot') else callback_or_message.bot).get_me()
     link = f"https://t.me/{bot_info.username}?start={user_id}"
 
     if lang == "ru":
@@ -62,5 +61,18 @@ async def show_referral(message: Message, lang: str):
             "━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🔗 <b>Your link:</b>\n<code>{link}</code>"
         )
+    
+    if edit and hasattr(callback_or_message, 'message'):
+        await callback_or_message.message.edit_text(text, parse_mode="HTML")
+    else:
+        await callback_or_message.answer(text, parse_mode="HTML")
 
-    await message.answer(text, parse_mode="HTML")
+
+@router.message(F.text.in_(["👥 Рефералы", "👥 Referrals"]))
+async def show_referral(message: Message, lang: str):
+    await show_referral_content(message, message.from_user.id, lang, edit=False)
+
+
+async def show_referral_callback(callback: CallbackQuery, lang: str):
+    await show_referral_content(callback, callback.from_user.id, lang, edit=True)
+    await callback.answer()
