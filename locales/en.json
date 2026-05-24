@@ -108,4 +108,12 @@
   "profile_title": "👤 Profile",
   "deposit_history_title": "📜 Deposit History",
   "no_deposits": "📜 Deposit history is empty\n\nDeposit via the «💎 Deposit」 button."
+  ,
+  "btn_profile": "👤 Profile",
+  "btn_deposit": "💎 Deposit",
+  "btn_deposit_history": "📜 Deposit History",
+  "btn_custom": "✏️ Custom amount",
+  "profile_title": "👤 Profile",
+  "deposit_history_title": "📜 Deposit History",
+  "no_deposits": "📜 Deposit history is empty\n\nDeposit via the «💎 Deposit」 button."
 }
