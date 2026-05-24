@@ -6,9 +6,9 @@ import asyncio
 
 from database.db import (
     get_user, update_balance, create_deposit_session, get_deposit_session,
-    clear_deposit_session, create_deposit, get_user_deposits
+    clear_deposit_session, create_deposit
 )
-from keyboards.kb import deposit_keyboard, deposit_cancel_keyboard, profile_keyboard
+from keyboards.kb import deposit_keyboard, deposit_check_keyboard
 from utils.helpers import format_ton
 from config import (
     DEPOSIT_MIN_AMOUNT, DEPOSIT_MAX_AMOUNT, TON_WALLET, USDT_WALLET, 
@@ -22,7 +22,7 @@ class DepositFSM(StatesGroup):
     waiting_custom_amount = State()
 
 
-async def show_deposit_content(callback: CallbackQuery, lang: str, edit: bool = True):
+async def show_deposit_content(callback: CallbackQuery, lang: str):
     """Показывает начальный экран пополнения"""
     user = await get_user(callback.from_user.id)
     
@@ -45,15 +45,13 @@ async def show_deposit_content(callback: CallbackQuery, lang: str, edit: bool = 
             "💡 After selecting, you'll receive payment instructions."
         )
     
-    if edit:
-        await callback.message.edit_text(text, reply_markup=deposit_keyboard(0, lang), parse_mode="HTML")
-    else:
-        await callback.message.answer(text, reply_markup=deposit_keyboard(0, lang), parse_mode="HTML")
+    await callback.message.edit_text(text, reply_markup=deposit_keyboard(lang), parse_mode="HTML")
     await callback.answer()
 
 
+@router.callback_query(F.data == "menu_deposit")
 async def show_deposit_callback(callback: CallbackQuery, lang: str):
-    await show_deposit_content(callback, lang, edit=True)
+    await show_deposit_content(callback, lang)
 
 
 @router.callback_query(F.data.startswith("deposit_"))
@@ -64,7 +62,6 @@ async def deposit_amount(callback: CallbackQuery, state: FSMContext, lang: str):
         await state.set_state(DepositFSM.waiting_custom_amount)
         await callback.message.edit_text(
             "✏️ " + ("Введите сумму в TON:" if lang == "ru" else "Enter amount in TON:"),
-            reply_markup=deposit_cancel_keyboard(lang),
             parse_mode="HTML"
         )
         await callback.answer()
@@ -138,8 +135,7 @@ async def show_deposit_instruction(msg: Message, user_id: int, amount: float, la
             f"<code>{note}</code>\n\n"
             "❗ Без этого комментария бот не сможет зачислить средства!\n"
             "💰 Средства зачисляются автоматически в течение 1-5 минут после отправки.\n"
-            f"📩 По вопросам: {SUPPORT_USERNAME}\n\n"
-            "✅ <b>После отправки нажмите «Проверить оплату»</b>"
+            f"📩 По вопросам: {SUPPORT_USERNAME}"
         )
     else:
         text = (
@@ -157,18 +153,10 @@ async def show_deposit_instruction(msg: Message, user_id: int, amount: float, la
             f"<code>{note}</code>\n\n"
             "❗ Without this comment, the bot cannot credit funds!\n"
             "💰 Funds are credited automatically within 1-5 minutes.\n"
-            f"📩 Support: {SUPPORT_USERNAME}\n\n"
-            "✅ <b>After sending, click «Check Payment»</b>"
+            f"📩 Support: {SUPPORT_USERNAME}"
         )
     
-    check_button = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔄 " + ("Проверить оплату" if lang == "ru" else "Check Payment"), 
-                              callback_data=f"check_deposit_{amount}")],
-        [InlineKeyboardButton(text="❌ " + ("Отмена" if lang == "ru" else "Cancel"), 
-                              callback_data="back_to_menu")]
-    ])
-    
-    await msg.edit_text(text, reply_markup=check_button, parse_mode="HTML")
+    await msg.edit_text(text, reply_markup=deposit_check_keyboard(amount, lang), parse_mode="HTML")
 
 
 @router.callback_query(F.data.startswith("check_deposit_"))
@@ -183,7 +171,7 @@ async def check_deposit(callback: CallbackQuery, bot: Bot, lang: str):
         )
         await callback.message.edit_text(
             "⏰ " + ("Время сессии истекло. Нажмите «Пополнить» заново." if lang == "ru" else "Session expired. Click «Deposit» again."),
-            reply_markup=deposit_keyboard(0, lang),
+            reply_markup=deposit_keyboard(lang),
             parse_mode="HTML"
         )
         return
@@ -195,8 +183,12 @@ async def check_deposit(callback: CallbackQuery, bot: Bot, lang: str):
     
     await asyncio.sleep(2)
     
+    # В реальном проекте здесь должен быть запрос к TON API
+    # Сейчас имитация - показываем кнопку ручного подтверждения
+    
     confirm_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Я оплатил", callback_data=f"confirm_deposit_{session['amount']}")],
+        [InlineKeyboardButton(text="✅ " + ("Я оплатил" if lang == "ru" else "I paid"), 
+                              callback_data=f"confirm_deposit_{session['amount']}")],
         [InlineKeyboardButton(text="🔄 " + ("Проверить ещё раз" if lang == "ru" else "Check again"), 
                               callback_data=f"check_deposit_{session['amount']}")],
         [InlineKeyboardButton(text="❌ " + ("Отмена" if lang == "ru" else "Cancel"), 
@@ -263,7 +255,7 @@ async def confirm_deposit(callback: CallbackQuery, bot: Bot, lang: str):
 
 
 @router.callback_query(F.data.startswith("admin_deposit_approve_"))
-async def admin_approve_deposit(callback: CallbackQuery, bot: Bot, lang: str):
+async def admin_approve_deposit(callback: CallbackQuery, bot: Bot):
     if callback.from_user.id not in ADMIN_IDS:
         await callback.answer("No access", show_alert=True)
         return
@@ -302,7 +294,7 @@ async def admin_approve_deposit(callback: CallbackQuery, bot: Bot, lang: str):
 
 
 @router.callback_query(F.data.startswith("admin_deposit_reject_"))
-async def admin_reject_deposit(callback: CallbackQuery, bot: Bot, lang: str):
+async def admin_reject_deposit(callback: CallbackQuery, bot: Bot):
     if callback.from_user.id not in ADMIN_IDS:
         await callback.answer("No access", show_alert=True)
         return
