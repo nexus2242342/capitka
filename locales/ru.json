@@ -19,7 +19,7 @@
   "btn_deposit": "💎 Пополнить",
   "btn_deposit_history": "📜 История пополнений",
   "btn_custom": "✏️ Своя сумма",
-
+  "btn_main_menu": "🏠 Главное меню"
   "shop_title": "🏪 Магазин рабочих\n\n💰 Ваш баланс: {balance} TON\nВыберите рабочего для покупки:",
   "shop_worker_info": "💼 {name}\n💰 Стоимость: {cost} TON\n📈 Доход: {income}/день\n\nКупить?",
   "shop_confirm": "✅ Вы хотите купить {name} за {cost} TON?",
