@@ -2,7 +2,6 @@ from . import start
 from . import shop
 from . import workers
 from . import farm
-from . import boosts
 from . import daily
 from . import referral
 from . import withdraw
