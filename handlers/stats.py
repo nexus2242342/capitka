@@ -10,9 +10,8 @@ router = Router()
 MEDALS = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 
 
-@router.message(F.text.in_(["📊 Статистика", "📊 Statistics"]))
-async def show_stats(message: Message, lang: str):
-    user_id = message.from_user.id
+async def show_stats_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+    """Показывает статистику пользователя"""
     user = await get_user(user_id)
     refs = await get_referrals(user_id)
     achs = await get_achievements(user_id)
@@ -45,8 +44,21 @@ async def show_stats(message: Message, lang: str):
             f"👥 Referrals: <b>{refs}</b>\n"
             f"🏅 Achievements: <b>{len(achs)}/4</b>"
         )
+    
+    if edit and hasattr(callback_or_message, 'message'):
+        await callback_or_message.message.edit_text(text, reply_markup=stats_keyboard(lang), parse_mode="HTML")
+    else:
+        await callback_or_message.answer(text, reply_markup=stats_keyboard(lang), parse_mode="HTML")
 
-    await message.answer(text, reply_markup=stats_keyboard(lang), parse_mode="HTML")
+
+@router.message(F.text.in_(["📊 Статистика", "📊 Statistics"]))
+async def show_stats(message: Message, lang: str):
+    await show_stats_content(message, message.from_user.id, lang, edit=False)
+
+
+async def show_stats_callback(callback: CallbackQuery, lang: str):
+    await show_stats_content(callback, callback.from_user.id, lang, edit=True)
+    await callback.answer()
 
 
 @router.callback_query(F.data == "show_top")
