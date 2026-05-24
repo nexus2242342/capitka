@@ -106,4 +106,108 @@ async def show_perm(callback: CallbackQuery, lang: str):
     else:
         text = (
             "╔══════════════════════╗\n"
-            "║  ♾️ PERMANENT BOOSTS
+            "║  ♾️ PERMANENT BOOSTS ║\n"
+            "╚══════════════════════╝\n\n"
+            f"💰 Balance: <b>{format_ton(user['balance'])} TON</b>\n\n"
+        )
+
+    for key, data in PERM_BOOSTS.items():
+        name = get_boost_name(key, PERM_BOOSTS, lang)
+        status = f"✅ {'Куплен' if lang == 'ru' else 'Owned'}" if key in owned else f"💰 {data['cost']} TON"
+        text += (
+            f"<b>{name}</b>\n"
+            f"  📈 +{int(data['bonus']*100)}% | {status}\n\n"
+        )
+
+    await callback.message.edit_text(
+        text, reply_markup=perm_boosts_keyboard(lang), parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "back_to_boosts")
+async def back_to_boosts(callback: CallbackQuery, lang: str):
+    await show_boosts_content(callback, callback.from_user.id, lang, edit=True)
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("buy_temp_"))
+async def buy_temp_boost(callback: CallbackQuery, lang: str):
+    boost_key = callback.data.replace("buy_temp_", "")
+    boost = TEMP_BOOSTS.get(boost_key)
+    if not boost:
+        await callback.answer("Error", show_alert=True)
+        return
+
+    user_id = callback.from_user.id
+    user = await get_user(user_id)
+    name = get_boost_name(boost_key, TEMP_BOOSTS, lang)
+
+    if user["balance"] < boost["cost"]:
+        await callback.answer(
+            f"❌ {'Недостаточно средств!' if lang == 'ru' else 'Not enough funds!'}\n"
+            f"{'Нужно' if lang == 'ru' else 'Need'}: {boost['cost']} TON",
+            show_alert=True
+        )
+        return
+
+    result = await add_temp_boost(user_id, boost_key, boost["multiplier"], boost["hours"])
+    if not result:
+        await callback.answer(
+            "⚠️ У вас уже активен этот буст!" if lang == "ru" else "⚠️ This boost is already active!",
+            show_alert=True
+        )
+        return
+
+    await update_balance(user_id, -boost["cost"])
+    until = (datetime.now() + timedelta(hours=boost["hours"])).strftime("%d.%m.%Y %H:%M")
+
+    await callback.message.edit_text(
+        f"✅ <b>{'Буст активирован!' if lang == 'ru' else 'Boost activated!'}</b>\n\n"
+        f"⚡ {name}\n"
+        f"📈 +{int((boost['multiplier']-1)*100)}%\n"
+        f"⏰ {'До' if lang == 'ru' else 'Until'}: <b>{until}</b>\n"
+        f"💰 {'Списано' if lang == 'ru' else 'Spent'}: <b>{boost['cost']} TON</b>",
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("buy_perm_"))
+async def buy_perm_boost(callback: CallbackQuery, lang: str):
+    boost_key = callback.data.replace("buy_perm_", "")
+    boost = PERM_BOOSTS.get(boost_key)
+    if not boost:
+        await callback.answer("Error", show_alert=True)
+        return
+
+    user_id = callback.from_user.id
+    user = await get_user(user_id)
+    name = get_boost_name(boost_key, PERM_BOOSTS, lang)
+
+    if user["balance"] < boost["cost"]:
+        await callback.answer(
+            f"❌ {'Недостаточно средств!' if lang == 'ru' else 'Not enough funds!'}\n"
+            f"{'Нужно' if lang == 'ru' else 'Need'}: {boost['cost']} TON",
+            show_alert=True
+        )
+        return
+
+    result = await add_perm_boost(user_id, boost_key)
+    if not result:
+        await callback.answer(
+            "⚠️ Вы уже купили этот буст!" if lang == "ru" else "⚠️ You already own this boost!",
+            show_alert=True
+        )
+        return
+
+    await update_balance(user_id, -boost["cost"])
+    await callback.message.edit_text(
+        f"✅ <b>{'Постоянный буст куплен!' if lang == 'ru' else 'Permanent boost purchased!'}</b>\n\n"
+        f"📚 {name}\n"
+        f"📈 +{int(boost['bonus']*100)}%\n"
+        f"♾️ {'Навсегда!' if lang == 'ru' else 'Forever!'}\n"
+        f"💰 {'Списано' if lang == 'ru' else 'Spent'}: <b>{boost['cost']} TON</b>",
+        parse_mode="HTML"
+    )
+    await callback.answer()
