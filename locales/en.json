@@ -19,7 +19,7 @@
   "btn_deposit": "💎 Deposit",
   "btn_deposit_history": "📜 Deposit History",
   "btn_custom": "✏️ Custom amount",
-
+  "btn_main_menu": "🏠 Main Menu"
   "shop_title": "🏪 Workers Shop\n\n💰 Your balance: {balance} TON\nChoose a worker to buy:",
   "shop_worker_info": "💼 {name}\n💰 Cost: {cost} TON\n📈 Income: {income}/day\n\nBuy?",
   "shop_confirm": "✅ Do you want to buy {name} for {cost} TON?",
