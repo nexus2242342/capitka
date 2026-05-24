@@ -8,8 +8,9 @@ from config import WORKERS
 router = Router()
 
 
-async def show_workers_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+async def show_workers_content(callback: CallbackQuery, lang: str):
     """Показывает рабочих"""
+    user_id = callback.from_user.id
     user = await get_user(user_id)
     workers = await get_user_workers(user_id)
     income = await calculate_income(user_id)
@@ -57,20 +58,12 @@ async def show_workers_content(callback_or_message, user_id: int, lang: str, edi
             lines.append(f"  {name} ×{cnt}\n  └ {day_income:.4f} TON/day")
         text = header + "\n".join(lines)
 
-    if edit and hasattr(callback_or_message, 'message'):
-        await callback_or_message.message.edit_text(text, reply_markup=workers_keyboard(lang), parse_mode="HTML")
-    else:
-        await callback_or_message.answer(text, reply_markup=workers_keyboard(lang), parse_mode="HTML")
-
-
-@router.message(F.text.in_(["👷 Мои рабочие", "👷 My Workers"]))
-async def show_workers(message: Message, lang: str):
-    await show_workers_content(message, message.from_user.id, lang, edit=False)
+    await callback.message.edit_text(text, reply_markup=workers_keyboard(lang), parse_mode="HTML")
+    await callback.answer()
 
 
 async def show_workers_callback(callback: CallbackQuery, lang: str):
-    await show_workers_content(callback, callback.from_user.id, lang, edit=True)
-    await callback.answer()
+    await show_workers_content(callback, lang)
 
 
 @router.callback_query(F.data == "collect_income")
