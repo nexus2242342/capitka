@@ -1,13 +1,13 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from middlewares.i18n import t
-from config import WORKERS, TEMP_BOOSTS, PERM_BOOSTS
+from config import WORKERS
 
 
 def main_menu(lang: str = "ru") -> ReplyKeyboardMarkup:
-    """Главное меню - только основные кнопки внизу экрана"""
+    """Главное меню - одна кнопка внизу"""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=t("btn_main_menu", lang))],
+            [KeyboardButton(text="🏠 " + ("Главное меню" if lang == "ru" else "Main Menu"))],
         ],
         resize_keyboard=True
     )
@@ -16,29 +16,24 @@ def main_menu(lang: str = "ru") -> ReplyKeyboardMarkup:
 def main_menu_buttons(lang: str = "ru") -> InlineKeyboardMarkup:
     """Все кнопки навигации внутри сообщения"""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text=t("btn_profile", lang), callback_data="menu_profile"),
-            InlineKeyboardButton(text=t("btn_deposit", lang), callback_data="menu_deposit"),
-        ],
-        [
-            InlineKeyboardButton(text=t("btn_shop", lang), callback_data="menu_shop"),
-            InlineKeyboardButton(text=t("btn_workers", lang), callback_data="menu_workers"),
-        ],
-        [
-            InlineKeyboardButton(text=t("btn_farm", lang), callback_data="menu_farm"),
-            InlineKeyboardButton(text=t("btn_boosts", lang), callback_data="menu_boosts"),
-        ],
-        [
-            InlineKeyboardButton(text=t("btn_daily", lang), callback_data="menu_daily"),
-            InlineKeyboardButton(text=t("btn_referral", lang), callback_data="menu_referral"),
-        ],
-        [
-            InlineKeyboardButton(text=t("btn_withdraw", lang), callback_data="menu_withdraw"),
-            InlineKeyboardButton(text=t("btn_stats", lang), callback_data="menu_stats"),
-        ],
-        [
-            InlineKeyboardButton(text=t("btn_language", lang), callback_data="menu_language"),
-        ],
+        [InlineKeyboardButton(text="👤 " + t("btn_profile", lang), callback_data="menu_profile")],
+        [InlineKeyboardButton(text="🏪 " + t("btn_shop", lang), callback_data="menu_shop")],
+        [InlineKeyboardButton(text="👷 " + t("btn_workers", lang), callback_data="menu_workers")],
+        [InlineKeyboardButton(text="🌾 " + t("btn_farm", lang), callback_data="menu_farm")],
+        [InlineKeyboardButton(text="🎁 " + t("btn_daily", lang), callback_data="menu_daily")],
+        [InlineKeyboardButton(text="👥 " + t("btn_referral", lang), callback_data="menu_referral")],
+        [InlineKeyboardButton(text="📊 " + t("btn_stats", lang), callback_data="menu_stats")],
+        [InlineKeyboardButton(text="🌍 " + t("btn_language", lang), callback_data="menu_language")],
+    ])
+
+
+def profile_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
+    """Клавиатура профиля"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💎 " + t("btn_deposit", lang), callback_data="menu_deposit")],
+        [InlineKeyboardButton(text="💸 " + t("btn_withdraw", lang), callback_data="menu_withdraw")],
+        [InlineKeyboardButton(text="📜 " + t("btn_deposit_history", lang), callback_data="deposit_history")],
+        [InlineKeyboardButton(text="◀️ " + t("btn_back", lang), callback_data="back_to_menu")],
     ])
 
 
@@ -54,7 +49,7 @@ def language_keyboard() -> InlineKeyboardMarkup:
 
 
 def shop_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Клавиатура магазина со всеми рабочими"""
+    """Клавиатура магазина"""
     buttons = []
     for wid, wdata in WORKERS.items():
         name = wdata.get(f"name_{lang}", wdata["name_ru"])
@@ -85,7 +80,7 @@ def workers_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
 
 
 def farm_keyboard(can_upgrade: bool, cost: float, is_max: bool, lang: str = "ru") -> InlineKeyboardMarkup:
-    """Клавиатура фермы с кнопкой улучшения"""
+    """Клавиатура фермы"""
     buttons = []
     if not is_max and can_upgrade:
         buttons.append([InlineKeyboardButton(
@@ -93,43 +88,6 @@ def farm_keyboard(can_upgrade: bool, cost: float, is_max: bool, lang: str = "ru"
             callback_data="upgrade_farm"
         )])
     buttons.append([InlineKeyboardButton(text="◀️ " + t("btn_back", lang), callback_data="back_to_menu")])
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-
-def boosts_menu_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Главное меню бустов"""
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="⚡ " + t("btn_temp_boosts", lang), callback_data="show_temp_boosts")],
-        [InlineKeyboardButton(text="♾️ " + t("btn_perm_boosts", lang), callback_data="show_perm_boosts")],
-        [InlineKeyboardButton(text="◀️ " + t("btn_back", lang), callback_data="back_to_menu")],
-    ])
-
-
-def temp_boosts_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Клавиатура временных бустов"""
-    buttons = []
-    for key, data in TEMP_BOOSTS.items():
-        name = data.get(f"name_{lang}", data["name_ru"])
-        bonus_percent = int((data['multiplier'] - 1) * 100)
-        buttons.append([InlineKeyboardButton(
-            text=f"{name} — {data['cost']} TON (+{bonus_percent}%)",
-            callback_data=f"buy_temp_{key}"
-        )])
-    buttons.append([InlineKeyboardButton(text="◀️ " + t("btn_back", lang), callback_data="back_to_boosts")])
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-
-def perm_boosts_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Клавиатура постоянных бустов"""
-    buttons = []
-    for key, data in PERM_BOOSTS.items():
-        name = data.get(f"name_{lang}", data["name_ru"])
-        bonus_percent = int(data['bonus'] * 100)
-        buttons.append([InlineKeyboardButton(
-            text=f"{name} — {data['cost']} TON (+{bonus_percent}%)",
-            callback_data=f"buy_perm_{key}"
-        )])
-    buttons.append([InlineKeyboardButton(text="◀️ " + t("btn_back", lang), callback_data="back_to_boosts")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -144,7 +102,7 @@ def withdraw_speed_keyboard(amount: float, lang: str = "ru") -> InlineKeyboardMa
 
 
 def withdraw_wallet_keyboard(amount: float, speed: str, lang: str = "ru") -> InlineKeyboardMarkup:
-    """Клавиатура выбора типа кошелька для вывода"""
+    """Клавиатура выбора типа кошелька"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="💎 TON", callback_data=f"wwallet_TON_{speed}_{amount}")],
         [InlineKeyboardButton(text="💵 USDT (TRC20)", callback_data=f"wwallet_USDT_{speed}_{amount}")],
@@ -163,7 +121,7 @@ def withdraw_confirm_keyboard(withdraw_id: int, lang: str = "ru") -> InlineKeybo
 
 
 def admin_withdraw_keyboard(withdraw_id: int) -> InlineKeyboardMarkup:
-    """Клавиатура для админа (одобрение/отклонение вывода)"""
+    """Клавиатура для админа"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="✅ Одобрить", callback_data=f"admin_approve_{withdraw_id}"),
@@ -173,7 +131,7 @@ def admin_withdraw_keyboard(withdraw_id: int) -> InlineKeyboardMarkup:
 
 
 def stats_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Клавиатура для статистики"""
+    """Клавиатура статистики"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🏆 " + t("btn_top", lang), callback_data="show_top")],
         [InlineKeyboardButton(text="🏅 " + t("btn_achievements", lang), callback_data="show_achievements")],
@@ -191,15 +149,7 @@ def admin_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
     ])
 
 
-def profile_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Клавиатура профиля пользователя"""
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📜 " + t("btn_deposit_history", lang), callback_data="deposit_history")],
-        [InlineKeyboardButton(text="◀️ " + t("btn_back", lang), callback_data="back_to_menu")],
-    ])
-
-
-def deposit_keyboard(amount: float = 0, lang: str = "ru") -> InlineKeyboardMarkup:
+def deposit_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
     """Клавиатура выбора суммы для пополнения"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="💎 10 TON", callback_data="deposit_10")],
@@ -209,17 +159,8 @@ def deposit_keyboard(amount: float = 0, lang: str = "ru") -> InlineKeyboardMarku
         [InlineKeyboardButton(text="💎 250 TON", callback_data="deposit_250")],
         [InlineKeyboardButton(text="💎 500 TON", callback_data="deposit_500")],
         [InlineKeyboardButton(text="💎 1000 TON", callback_data="deposit_1000")],
-        [InlineKeyboardButton(
-            text="✏️ " + ("Своя сумма" if lang == "ru" else "Custom amount"), 
-            callback_data="deposit_custom"
-        )],
-        [InlineKeyboardButton(text="❌ " + t("btn_cancel", lang), callback_data="back_to_menu")],
-    ])
-
-
-def deposit_cancel_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Клавиатура отмены пополнения"""
-    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✏️ " + ("Своя сумма" if lang == "ru" else "Custom amount"), 
+                              callback_data="deposit_custom")],
         [InlineKeyboardButton(text="❌ " + t("btn_cancel", lang), callback_data="back_to_menu")],
     ])
 
@@ -231,13 +172,7 @@ def deposit_check_keyboard(amount: float, lang: str = "ru") -> InlineKeyboardMar
             text="🔄 " + ("Проверить оплату" if lang == "ru" else "Check Payment"), 
             callback_data=f"check_deposit_{amount}"
         )],
-        [InlineKeyboardButton(text="❌ " + ("Отмена" if lang == "ru" else "Cancel"), 
-                              callback_data="back_to_menu")]
-    ])
-
-
-def back_to_menu_button(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Кнопка возврата в главное меню"""
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🏠 " + t("btn_back", lang), callback_data="back_to_menu")]
+        [InlineKeyboardButton(text="✅ " + ("Я оплатил" if lang == "ru" else "I paid"), 
+                              callback_data=f"confirm_deposit_{amount}")],
+        [InlineKeyboardButton(text="❌ " + t("btn_cancel", lang), callback_data="back_to_menu")],
     ])
