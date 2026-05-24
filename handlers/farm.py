@@ -9,7 +9,6 @@ router = Router()
 
 
 async def build_farm_text(user_id: int, lang: str) -> tuple:
-    from database.db import get_user
     user = await get_user(user_id)
     level = user["farm_level"]
     worker_count = await get_worker_count(user_id)
@@ -87,28 +86,42 @@ async def build_farm_text(user_id: int, lang: str) -> tuple:
     return text, is_max, cost
 
 
-@router.message(F.text.in_(["🌾 Ферма", "🌾 Farm"]))
-async def show_farm(message: Message, lang: str):
-    user_id = message.from_user.id
+async def show_farm_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+    """Показывает ферму"""
+    text, is_max, cost = await build_farm_text(user_id, lang)
     user = await get_user(user_id)
     worker_count = await get_worker_count(user_id)
-    level = user["farm_level"]
-    is_max = level >= 10
-
-    text, is_max, cost = await build_farm_text(user_id, lang)
+    
     can_upgrade = False
     if not is_max:
-        next_data = FARM_LEVELS[level + 1]
+        next_data = FARM_LEVELS[user["farm_level"] + 1]
         can_upgrade = (
             worker_count >= next_data["min_workers"] and
             user["balance"] >= next_data["upgrade_cost"]
         )
+    
+    if edit and hasattr(callback_or_message, 'message'):
+        await callback_or_message.message.edit_text(
+            text,
+            reply_markup=farm_keyboard(can_upgrade, cost, is_max, lang),
+            parse_mode="HTML"
+        )
+    else:
+        await callback_or_message.answer(
+            text,
+            reply_markup=farm_keyboard(can_upgrade, cost, is_max, lang),
+            parse_mode="HTML"
+        )
 
-    await message.answer(
-        text,
-        reply_markup=farm_keyboard(can_upgrade, cost, is_max, lang),
-        parse_mode="HTML"
-    )
+
+@router.message(F.text.in_(["🌾 Ферма", "🌾 Farm"]))
+async def show_farm(message: Message, lang: str):
+    await show_farm_content(message, message.from_user.id, lang, edit=False)
+
+
+async def show_farm_callback(callback: CallbackQuery, lang: str):
+    await show_farm_content(callback, callback.from_user.id, lang, edit=True)
+    await callback.answer()
 
 
 @router.callback_query(F.data == "upgrade_farm")
@@ -119,7 +132,7 @@ async def upgrade_farm(callback: CallbackQuery, lang: str):
     worker_count = await get_worker_count(user_id)
 
     if level >= 10:
-        await callback.answer("Max!" , show_alert=True)
+        await callback.answer("Max!", show_alert=True)
         return
 
     next_data = FARM_LEVELS[level + 1]
