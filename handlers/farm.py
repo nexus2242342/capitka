@@ -86,11 +86,11 @@ async def build_farm_text(user_id: int, lang: str) -> tuple:
     return text, is_max, cost
 
 
-async def show_farm_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+async def show_farm_content(callback: CallbackQuery, lang: str):
     """Показывает ферму"""
-    text, is_max, cost = await build_farm_text(user_id, lang)
-    user = await get_user(user_id)
-    worker_count = await get_worker_count(user_id)
+    text, is_max, cost = await build_farm_text(callback.from_user.id, lang)
+    user = await get_user(callback.from_user.id)
+    worker_count = await get_worker_count(callback.from_user.id)
     
     can_upgrade = False
     if not is_max:
@@ -100,28 +100,16 @@ async def show_farm_content(callback_or_message, user_id: int, lang: str, edit: 
             user["balance"] >= next_data["upgrade_cost"]
         )
     
-    if edit and hasattr(callback_or_message, 'message'):
-        await callback_or_message.message.edit_text(
-            text,
-            reply_markup=farm_keyboard(can_upgrade, cost, is_max, lang),
-            parse_mode="HTML"
-        )
-    else:
-        await callback_or_message.answer(
-            text,
-            reply_markup=farm_keyboard(can_upgrade, cost, is_max, lang),
-            parse_mode="HTML"
-        )
-
-
-@router.message(F.text.in_(["🌾 Ферма", "🌾 Farm"]))
-async def show_farm(message: Message, lang: str):
-    await show_farm_content(message, message.from_user.id, lang, edit=False)
+    await callback.message.edit_text(
+        text,
+        reply_markup=farm_keyboard(can_upgrade, cost, is_max, lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
 
 
 async def show_farm_callback(callback: CallbackQuery, lang: str):
-    await show_farm_content(callback, callback.from_user.id, lang, edit=True)
-    await callback.answer()
+    await show_farm_content(callback, lang)
 
 
 @router.callback_query(F.data == "upgrade_farm")
