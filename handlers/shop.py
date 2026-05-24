@@ -2,46 +2,37 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from database.db import get_user, update_balance, add_worker
 from keyboards.kb import shop_keyboard, confirm_buy_keyboard
-from middlewares.i18n import t
 from utils.helpers import calculate_income, format_ton, get_worker_name, check_achievements
 from config import WORKERS, ACHIEVEMENTS
 
 router = Router()
 
 
-async def show_shop_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+async def show_shop_content(callback: CallbackQuery, lang: str):
     """Показывает магазин"""
-    user = await get_user(user_id)
-    income = await calculate_income(user_id)
+    user = await get_user(callback.from_user.id)
+    income = await calculate_income(callback.from_user.id)
     
     text = (
         "╔══════════════════════╗\n"
         f"║    {'🏪 МАГАЗИН' if lang == 'ru' else '🏪 SHOP'}         ║\n"
         "╚══════════════════════╝\n\n"
-        f"💰 {t('balance', lang)}: <b>{format_ton(user['balance'])} TON</b>\n"
-        f"📈 {t('income_day', lang)}: <b>{format_ton(income)} TON</b>\n\n"
+        f"💰 {'Баланс' if lang == 'ru' else 'Balance'}: <b>{format_ton(user['balance'])} TON</b>\n"
+        f"📈 {'Доход/день' if lang == 'ru' else 'Income/day'}: <b>{format_ton(income)} TON</b>\n\n"
         f"{'👇 Выберите рабочего:' if lang == 'ru' else '👇 Choose a worker:'}"
     )
     
-    if edit and hasattr(callback_or_message, 'message'):
-        await callback_or_message.message.edit_text(text, reply_markup=shop_keyboard(lang), parse_mode="HTML")
-    else:
-        await callback_or_message.answer(text, reply_markup=shop_keyboard(lang), parse_mode="HTML")
-
-
-@router.message(F.text.in_(["🏪 Магазин", "🏪 Shop"]))
-async def show_shop(message: Message, lang: str):
-    await show_shop_content(message, message.from_user.id, lang, edit=False)
-
-
-async def show_shop_callback(callback: CallbackQuery, lang: str):
-    await show_shop_content(callback, callback.from_user.id, lang, edit=True)
+    await callback.message.edit_text(text, reply_markup=shop_keyboard(lang), parse_mode="HTML")
     await callback.answer()
 
 
-@router.callback_query(F.data == "back_shop")
-async def back_shop(callback: CallbackQuery, lang: str):
-    await show_shop_content(callback, callback.from_user.id, lang, edit=True)
+async def show_shop_callback(callback: CallbackQuery, lang: str):
+    await show_shop_content(callback, lang)
+
+
+@router.callback_query(F.data == "back_to_shop")
+async def back_to_shop(callback: CallbackQuery, lang: str):
+    await show_shop_content(callback, lang)
 
 
 @router.callback_query(F.data.startswith("buy_worker_"))
