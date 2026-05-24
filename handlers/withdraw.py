@@ -8,7 +8,7 @@ from keyboards.kb import (withdraw_speed_keyboard, withdraw_wallet_keyboard,
                            withdraw_confirm_keyboard, admin_withdraw_keyboard)
 from utils.helpers import format_ton
 from config import (WITHDRAW_MIN, WITHDRAW_FEE_NORMAL, WITHDRAW_FEE_FAST,
-                    WITHDRAW_FEE_INSTANT, WITHDRAW_MAX_DAY, LOG_CHAT_ID, SUPPORT_USERNAME)
+                    WITHDRAW_FEE_INSTANT, WITHDRAW_MAX_DAY, LOG_CHAT_ID, SUPPORT_USERNAME, ADMIN_IDS)
 
 router = Router()
 
@@ -24,10 +24,10 @@ class WithdrawFSM(StatesGroup):
     waiting_address = State()
 
 
-@router.message(F.text.in_(["💸 Вывод", "💸 Withdraw"]))
-async def start_withdraw(message: Message, state: FSMContext, lang: str):
-    user = await get_user(message.from_user.id)
-    today_withdrawn = await get_withdrawn_today(message.from_user.id)
+async def show_withdraw_content(callback: CallbackQuery, state: FSMContext, lang: str):
+    """Показывает начальный экран вывода"""
+    user = await get_user(callback.from_user.id)
+    today_withdrawn = await get_withdrawn_today(callback.from_user.id)
     available_today = WITHDRAW_MAX_DAY - today_withdrawn
 
     if lang == "ru":
@@ -56,10 +56,21 @@ async def start_withdraw(message: Message, state: FSMContext, lang: str):
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "✏️ <b>Enter withdrawal amount:</b>"
         )
-
-    await message.answer(text, parse_mode="HTML")
+    
+    await callback.message.edit_text(text, parse_mode="HTML")
     await state.set_state(WithdrawFSM.waiting_amount)
     await state.update_data(lang=lang)
+    await callback.answer()
+
+
+async def start_withdraw_callback(callback: CallbackQuery, lang: str):
+    """Начало вывода из callback"""
+    from aiogram.fsm.context import FSMContext
+    from main import dp
+    
+    # Получаем FSM контекст для этого пользователя
+    state = FSMContext(storage=dp.storage, chat_id=callback.from_user.id, user_id=callback.from_user.id)
+    await show_withdraw_content(callback, state, lang)
 
 
 @router.message(WithdrawFSM.waiting_amount)
@@ -212,7 +223,6 @@ async def confirm_withdraw(callback: CallbackQuery, lang: str, bot: Bot):
         await callback.answer("Error", show_alert=True)
         return
 
-    from database.db import get_user
     user = await get_user(w["user_id"])
     speed_labels = {
         "ru": {"normal": "🐢 Обычный", "fast": "🚀 Быстрый", "instant": "⚡ Мгновенный"},
