@@ -25,8 +25,9 @@ def build_streak_bar(streak: int) -> str:
     return bar
 
 
-async def show_daily_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+async def show_daily_content(callback: CallbackQuery, lang: str):
     """Показывает ежедневный бонус"""
+    user_id = callback.from_user.id
     info = await get_daily_info(user_id)
     if not info:
         return
@@ -62,10 +63,8 @@ async def show_daily_content(callback_or_message, user_id: int, lang: str, edit:
                     f"💰 Tomorrow: <b>+{next_bonus} TON</b>"
                 )
             
-            if edit and hasattr(callback_or_message, 'message'):
-                await callback_or_message.message.edit_text(text, parse_mode="HTML")
-            else:
-                await callback_or_message.answer(text, parse_mode="HTML")
+            await callback.message.edit_text(text, parse_mode="HTML")
+            await callback.answer()
             return
 
         if last_date < today - timedelta(days=1):
@@ -104,17 +103,9 @@ async def show_daily_content(callback_or_message, user_id: int, lang: str, edit:
             f"💎 Tomorrow: <b>+{next_bonus} TON</b>"
         )
     
-    if edit and hasattr(callback_or_message, 'message'):
-        await callback_or_message.message.edit_text(text, parse_mode="HTML")
-    else:
-        await callback_or_message.answer(text, parse_mode="HTML")
-
-
-@router.message(F.text.in_(["🎁 Ежедневный бонус", "🎁 Daily Bonus"]))
-async def daily_bonus(message: Message, lang: str):
-    await show_daily_content(message, message.from_user.id, lang, edit=False)
+    await callback.message.edit_text(text, parse_mode="HTML")
+    await callback.answer()
 
 
 async def show_daily_callback(callback: CallbackQuery, lang: str):
-    await show_daily_content(callback, callback.from_user.id, lang, edit=True)
-    await callback.answer()
+    await show_daily_content(callback, lang)
