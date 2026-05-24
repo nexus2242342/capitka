@@ -10,8 +10,9 @@ router = Router()
 MEDALS = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 
 
-async def show_stats_content(callback_or_message, user_id: int, lang: str, edit: bool = True):
+async def show_stats_content(callback: CallbackQuery, lang: str):
     """Показывает статистику пользователя"""
+    user_id = callback.from_user.id
     user = await get_user(user_id)
     refs = await get_referrals(user_id)
     achs = await get_achievements(user_id)
@@ -45,20 +46,12 @@ async def show_stats_content(callback_or_message, user_id: int, lang: str, edit:
             f"🏅 Achievements: <b>{len(achs)}/4</b>"
         )
     
-    if edit and hasattr(callback_or_message, 'message'):
-        await callback_or_message.message.edit_text(text, reply_markup=stats_keyboard(lang), parse_mode="HTML")
-    else:
-        await callback_or_message.answer(text, reply_markup=stats_keyboard(lang), parse_mode="HTML")
-
-
-@router.message(F.text.in_(["📊 Статистика", "📊 Statistics"]))
-async def show_stats(message: Message, lang: str):
-    await show_stats_content(message, message.from_user.id, lang, edit=False)
+    await callback.message.edit_text(text, reply_markup=stats_keyboard(lang), parse_mode="HTML")
+    await callback.answer()
 
 
 async def show_stats_callback(callback: CallbackQuery, lang: str):
-    await show_stats_content(callback, callback.from_user.id, lang, edit=True)
-    await callback.answer()
+    await show_stats_content(callback, lang)
 
 
 @router.callback_query(F.data == "show_top")
@@ -74,11 +67,13 @@ async def show_top(callback: CallbackQuery, lang: str):
             "💰 <b>По заработку:</b>\n"
         )
         for i, row in enumerate(top_earned):
-            text += f"{MEDALS[i]} {row['full_name']} — <b>{format_ton(row['total_earned'])} TON</b>\n"
+            medal = MEDALS[i] if i < len(MEDALS) else f"{i+1}️⃣"
+            text += f"{medal} {row['full_name']} — <b>{format_ton(row['total_earned'])} TON</b>\n"
 
         text += "\n👥 <b>По рефералам:</b>\n"
         for i, row in enumerate(top_refs):
-            text += f"{MEDALS[i]} {row['full_name']} — <b>{row['ref_count']} чел.</b>\n"
+            medal = MEDALS[i] if i < len(MEDALS) else f"{i+1}️⃣"
+            text += f"{medal} {row['full_name']} — <b>{row['ref_count']} чел.</b>\n"
     else:
         text = (
             "╔══════════════════════╗\n"
@@ -87,11 +82,13 @@ async def show_top(callback: CallbackQuery, lang: str):
             "💰 <b>By earnings:</b>\n"
         )
         for i, row in enumerate(top_earned):
-            text += f"{MEDALS[i]} {row['full_name']} — <b>{format_ton(row['total_earned'])} TON</b>\n"
+            medal = MEDALS[i] if i < len(MEDALS) else f"{i+1}️⃣"
+            text += f"{medal} {row['full_name']} — <b>{format_ton(row['total_earned'])} TON</b>\n"
 
         text += "\n👥 <b>By referrals:</b>\n"
         for i, row in enumerate(top_refs):
-            text += f"{MEDALS[i]} {row['full_name']} — <b>{row['ref_count']} people</b>\n"
+            medal = MEDALS[i] if i < len(MEDALS) else f"{i+1}️⃣"
+            text += f"{medal} {row['full_name']} — <b>{row['ref_count']} people</b>\n"
 
     await callback.message.edit_text(text, reply_markup=stats_keyboard(lang), parse_mode="HTML")
     await callback.answer()
