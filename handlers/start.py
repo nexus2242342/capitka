@@ -3,7 +3,6 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from database.db import get_user, create_user, update_balance, add_referral
 from keyboards.kb import main_menu, main_menu_buttons
-from middlewares.i18n import t
 from utils.helpers import calculate_income, calculate_pending, format_ton
 from config import REFERRAL_INVITE_BONUS
 
@@ -95,13 +94,12 @@ async def cmd_start(message: Message, lang: str):
     )
     
     await message.answer(
-        "🏠 Главное меню" if lang == "ru" else "🏠 Main Menu",
+        "🏠 " + ("Главное меню" if lang == "ru" else "Main Menu"),
         reply_markup=main_menu(lang)
     )
 
 
-@router.message(F.text == "🏠 Главное меню")
-@router.message(F.text == "🏠 Main Menu")
+@router.message(F.text.startswith("🏠"))
 async def show_main_menu(message: Message, lang: str):
     user = await get_user(message.from_user.id)
     income = await calculate_income(message.from_user.id)
@@ -134,12 +132,6 @@ async def menu_profile(callback: CallbackQuery, lang: str):
     await show_profile_callback(callback, lang)
 
 
-@router.callback_query(F.data == "menu_deposit")
-async def menu_deposit(callback: CallbackQuery, lang: str):
-    from handlers.deposit import show_deposit_callback
-    await show_deposit_callback(callback, lang)
-
-
 @router.callback_query(F.data == "menu_shop")
 async def menu_shop(callback: CallbackQuery, lang: str):
     from handlers.shop import show_shop_callback
@@ -158,12 +150,6 @@ async def menu_farm(callback: CallbackQuery, lang: str):
     await show_farm_callback(callback, lang)
 
 
-@router.callback_query(F.data == "menu_boosts")
-async def menu_boosts(callback: CallbackQuery, lang: str):
-    from handlers.boosts import show_boosts_callback
-    await show_boosts_callback(callback, lang)
-
-
 @router.callback_query(F.data == "menu_daily")
 async def menu_daily(callback: CallbackQuery, lang: str):
     from handlers.daily import show_daily_callback
@@ -174,12 +160,6 @@ async def menu_daily(callback: CallbackQuery, lang: str):
 async def menu_referral(callback: CallbackQuery, lang: str):
     from handlers.referral import show_referral_callback
     await show_referral_callback(callback, lang)
-
-
-@router.callback_query(F.data == "menu_withdraw")
-async def menu_withdraw(callback: CallbackQuery, lang: str):
-    from handlers.withdraw import show_withdraw_callback
-    await show_withdraw_callback(callback, lang)
 
 
 @router.callback_query(F.data == "menu_stats")
