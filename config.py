@@ -44,21 +44,6 @@ REFERRAL_5_WORKERS_BONUS = 2.0
 REFERRAL_10_WORKERS_BONUS = 5.0
 REFERRAL_LVL5_WORKER_BONUS = 3.0
 
-TEMP_BOOSTS = {
-    "speed":   {"name_ru": "⚡ Ускорение",    "name_en": "⚡ Speed",       "cost": 10,  "multiplier": 1.20, "hours": 24},
-    "repair":  {"name_ru": "🔧 Ремонт",       "name_en": "🔧 Repair",      "cost": 25,  "multiplier": 1.30, "hours": 72},
-    "upgrade": {"name_ru": "🏭 Модернизация", "name_en": "🏭 Upgrade",     "cost": 50,  "multiplier": 1.50, "hours": 168},
-    "auto":    {"name_ru": "🤖 Автоматизация","name_en": "🤖 Automation",  "cost": 100, "multiplier": 2.00, "hours": 168},
-    "premium": {"name_ru": "💎 Премиум",      "name_en": "💎 Premium",     "cost": 200, "multiplier": 2.50, "hours": 720},
-}
-
-PERM_BOOSTS = {
-    "training": {"name_ru": "📚 Обучение",  "name_en": "📚 Training",    "cost": 50,  "bonus": 0.05},
-    "courses":  {"name_ru": "🎓 Курсы",     "name_en": "🎓 Courses",     "cost": 100, "bonus": 0.10},
-    "cert":     {"name_ru": "🏆 Сертификат","name_en": "🏆 Certificate", "cost": 200, "bonus": 0.15},
-    "license":  {"name_ru": "👑 Лицензия",  "name_en": "👑 License",     "cost": 500, "bonus": 0.25},
-}
-
 WITHDRAW_MIN = 10.0
 WITHDRAW_FEE_NORMAL = 0.05
 WITHDRAW_FEE_FAST = 0.10
@@ -74,10 +59,8 @@ ACHIEVEMENTS = {
 }
 
 ADMIN_IDS = [8353710361]
-# Добавьте в конец файла:
 
 # Депозиты
-DEPOSIT_CHECK_INTERVAL = 30  # секунд
+DEPOSIT_NOTE_PREFIX = "WORKERS_DEPOSIT_"
 DEPOSIT_MIN_AMOUNT = 1.0
 DEPOSIT_MAX_AMOUNT = 10000.0
-DEPOSIT_NOTE_PREFIX = "WORKERS_DEPOSIT_"  # Префикс для комментариев к транзакциям
