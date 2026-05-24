@@ -88,23 +88,21 @@ async def cmd_start(message: Message, lang: str):
         if is_new else ""
     )
 
-    # Отправляем сообщение с Inline-кнопками
     await message.answer(
         greeting + build_main_text(user, income, pending, lang),
         reply_markup=main_menu_buttons(lang),
         parse_mode="HTML"
     )
     
-    # Отправляем Reply-клавиатуру (одна кнопка внизу)
     await message.answer(
         "🏠 Главное меню" if lang == "ru" else "🏠 Main Menu",
         reply_markup=main_menu(lang)
     )
 
 
-@router.message(F.text == "🏠 Главное меню" or F.text == "🏠 Main Menu")
+@router.message(F.text == "🏠 Главное меню")
+@router.message(F.text == "🏠 Main Menu")
 async def show_main_menu(message: Message, lang: str):
-    """Обработчик кнопки главного меню внизу"""
     user = await get_user(message.from_user.id)
     income = await calculate_income(message.from_user.id)
     pending = await calculate_pending(message.from_user.id)
@@ -118,7 +116,6 @@ async def show_main_menu(message: Message, lang: str):
 
 @router.callback_query(F.data == "back_to_menu")
 async def back_to_menu(callback: CallbackQuery, lang: str):
-    """Возврат в главное меню из любого места"""
     user = await get_user(callback.from_user.id)
     income = await calculate_income(callback.from_user.id)
     pending = await calculate_pending(callback.from_user.id)
@@ -131,35 +128,34 @@ async def back_to_menu(callback: CallbackQuery, lang: str):
     await callback.answer()
 
 
-# Обработчики для кнопок главного меню
 @router.callback_query(F.data == "menu_profile")
 async def menu_profile(callback: CallbackQuery, lang: str):
-    from handlers.profile import show_profile
-    await show_profile(callback, lang)
+    from handlers.profile import show_profile_callback
+    await show_profile_callback(callback, lang)
 
 
 @router.callback_query(F.data == "menu_deposit")
 async def menu_deposit(callback: CallbackQuery, lang: str):
-    from handlers.deposit import start_deposit_callback
-    await start_deposit_callback(callback, lang)
+    from handlers.deposit import show_deposit_callback
+    await show_deposit_callback(callback, lang)
 
 
 @router.callback_query(F.data == "menu_shop")
 async def menu_shop(callback: CallbackQuery, lang: str):
-    from handlers.shop import show_shop
-    await show_shop(callback, lang)
+    from handlers.shop import show_shop_callback
+    await show_shop_callback(callback, lang)
 
 
 @router.callback_query(F.data == "menu_workers")
 async def menu_workers(callback: CallbackQuery, lang: str):
-    from handlers.workers import show_workers
-    await show_workers(callback, lang)
+    from handlers.workers import show_workers_callback
+    await show_workers_callback(callback, lang)
 
 
 @router.callback_query(F.data == "menu_farm")
 async def menu_farm(callback: CallbackQuery, lang: str):
-    from handlers.farm import show_farm
-    await show_farm(callback, lang)
+    from handlers.farm import show_farm_callback
+    await show_farm_callback(callback, lang)
 
 
 @router.callback_query(F.data == "menu_boosts")
@@ -170,8 +166,8 @@ async def menu_boosts(callback: CallbackQuery, lang: str):
 
 @router.callback_query(F.data == "menu_daily")
 async def menu_daily(callback: CallbackQuery, lang: str):
-    from handlers.daily import daily_bonus_callback
-    await daily_bonus_callback(callback, lang)
+    from handlers.daily import show_daily_callback
+    await show_daily_callback(callback, lang)
 
 
 @router.callback_query(F.data == "menu_referral")
@@ -182,8 +178,8 @@ async def menu_referral(callback: CallbackQuery, lang: str):
 
 @router.callback_query(F.data == "menu_withdraw")
 async def menu_withdraw(callback: CallbackQuery, lang: str):
-    from handlers.withdraw import start_withdraw_callback
-    await start_withdraw_callback(callback, lang)
+    from handlers.withdraw import show_withdraw_callback
+    await show_withdraw_callback(callback, lang)
 
 
 @router.callback_query(F.data == "menu_stats")
@@ -194,5 +190,5 @@ async def menu_stats(callback: CallbackQuery, lang: str):
 
 @router.callback_query(F.data == "menu_language")
 async def menu_language(callback: CallbackQuery, lang: str):
-    from handlers.language import show_language
-    await show_language(callback, lang)
+    from handlers.language import show_language_callback
+    await show_language_callback(callback, lang)
