@@ -2,28 +2,22 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from database.db import set_user_language
 from keyboards.kb import language_keyboard, main_menu_buttons
+from utils.helpers import calculate_income, calculate_pending, format_ton
+from database.db import get_user
 
 router = Router()
 
 
-async def show_language_content(callback_or_message, lang: str, edit: bool = True):
+async def show_language_content(callback: CallbackQuery, lang: str):
     """Показывает выбор языка"""
     text = "🌍 <b>Выберите язык / Choose language:</b>"
     
-    if edit and hasattr(callback_or_message, 'message'):
-        await callback_or_message.message.edit_text(text, reply_markup=language_keyboard(), parse_mode="HTML")
-    else:
-        await callback_or_message.answer(text, reply_markup=language_keyboard(), parse_mode="HTML")
-
-
-@router.message(F.text == "🌍 Язык / Language")
-async def choose_language(message: Message, lang: str):
-    await show_language_content(message, lang, edit=False)
+    await callback.message.edit_text(text, reply_markup=language_keyboard(), parse_mode="HTML")
+    await callback.answer()
 
 
 async def show_language_callback(callback: CallbackQuery, lang: str):
-    await show_language_content(callback, lang, edit=True)
-    await callback.answer()
+    await show_language_content(callback, lang)
 
 
 @router.callback_query(F.data == "lang_ru")
@@ -32,8 +26,6 @@ async def set_ru(callback: CallbackQuery):
     await callback.message.edit_text("✅ <b>Язык изменён на Русский!</b>", parse_mode="HTML")
     
     from handlers.start import build_main_text
-    from database.db import get_user
-    from utils.helpers import calculate_income, calculate_pending
     
     user = await get_user(callback.from_user.id)
     income = await calculate_income(callback.from_user.id)
@@ -53,8 +45,6 @@ async def set_en(callback: CallbackQuery):
     await callback.message.edit_text("✅ <b>Language changed to English!</b>", parse_mode="HTML")
     
     from handlers.start import build_main_text
-    from database.db import get_user
-    from utils.helpers import calculate_income, calculate_pending
     
     user = await get_user(callback.from_user.id)
     income = await calculate_income(callback.from_user.id)
