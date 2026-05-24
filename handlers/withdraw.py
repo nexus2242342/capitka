@@ -63,13 +63,9 @@ async def show_withdraw_content(callback: CallbackQuery, state: FSMContext, lang
     await callback.answer()
 
 
-async def start_withdraw_callback(callback: CallbackQuery, lang: str):
+@router.callback_query(F.data == "menu_withdraw")
+async def start_withdraw_callback(callback: CallbackQuery, state: FSMContext, lang: str):
     """Начало вывода из callback"""
-    from aiogram.fsm.context import FSMContext
-    from main import dp
-    
-    # Получаем FSM контекст для этого пользователя
-    state = FSMContext(storage=dp.storage, chat_id=callback.from_user.id, user_id=callback.from_user.id)
     await show_withdraw_content(callback, state, lang)
 
 
