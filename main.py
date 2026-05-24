@@ -5,7 +5,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from config import BOT_TOKEN
 from database.db import init_db
 from middlewares.i18n import I18nMiddleware
-from handlers import start, shop, workers, farm, boosts, daily, referral, withdraw, stats, admin, language, deposit, profile
+from handlers import start, shop, workers, farm, daily, referral, withdraw, stats, admin, language, deposit, profile
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,17 +19,16 @@ async def main():
     dp.message.middleware(I18nMiddleware())
     dp.callback_query.middleware(I18nMiddleware())
 
-    dp.include_router(language.router)
     dp.include_router(start.router)
     dp.include_router(shop.router)
     dp.include_router(workers.router)
     dp.include_router(farm.router)
-    dp.include_router(boosts.router)
     dp.include_router(daily.router)
     dp.include_router(referral.router)
     dp.include_router(withdraw.router)
     dp.include_router(stats.router)
     dp.include_router(admin.router)
+    dp.include_router(language.router)
     dp.include_router(deposit.router)
     dp.include_router(profile.router)
 
